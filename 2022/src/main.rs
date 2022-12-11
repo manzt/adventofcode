@@ -4,6 +4,7 @@ mod day01;
 mod day02;
 mod day03;
 mod day04;
+mod day05;
 
 fn main() -> Result<()> {
     if let Some(arg) = std::env::args().nth(1) {
@@ -23,6 +24,10 @@ fn main() -> Result<()> {
             "day04" => {
                 day04::part1(read_input(4))?;
                 day04::part2(read_input(4))?;
+            }
+            "day05" => {
+                day05::part1(read_input(5))?;
+                day05::part2(read_input(5))?;
             }
             _ => panic!("unknown day"),
         }
