@@ -47,33 +47,28 @@ impl std::str::FromStr for Report {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[test]
+fn part1() {
+    assert_eq!(
+        std::fs::read_to_string("input/day02.txt")
+            .unwrap()
+            .lines()
+            .map(|line| line.parse::<Report>().unwrap())
+            .filter(|report| report.is_safe())
+            .count(),
+        486
+    );
+}
 
-    #[test]
-    fn part1() {
-        assert_eq!(
-            std::fs::read_to_string("input/day02.txt")
-                .unwrap()
-                .lines()
-                .map(|line| line.parse::<Report>().unwrap())
-                .filter(|report| report.is_safe())
-                .count(),
-            486
-        );
-    }
-
-    #[test]
-    fn part2() {
-        assert_eq!(
-            std::fs::read_to_string("input/day02.txt")
-                .unwrap()
-                .lines()
-                .map(|line| line.parse::<Report>().unwrap())
-                .filter(|report| report.is_safe_with_dampening())
-                .count(),
-            540
-        );
-    }
+#[test]
+fn part2() {
+    assert_eq!(
+        std::fs::read_to_string("input/day02.txt")
+            .unwrap()
+            .lines()
+            .map(|line| line.parse::<Report>().unwrap())
+            .filter(|report| report.is_safe_with_dampening())
+            .count(),
+        540
+    );
 }

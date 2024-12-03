@@ -88,35 +88,30 @@ impl InstructionSet {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[test]
+fn part1() {
+    assert_eq!(
+        183380722,
+        std::fs::read_to_string("input/day03.txt")
+            .unwrap()
+            .parse::<InstructionSet>()
+            .unwrap()
+            .evaluate()
+            .into_iter()
+            .sum::<u32>()
+    )
+}
 
-    #[test]
-    fn part1() {
-        assert_eq!(
-            183380722,
-            std::fs::read_to_string("input/day03.txt")
-                .unwrap()
-                .parse::<InstructionSet>()
-                .unwrap()
-                .evaluate()
-                .into_iter()
-                .sum::<u32>()
-        )
-    }
-
-    #[test]
-    fn part2() {
-        assert_eq!(
-            82733683,
-            std::fs::read_to_string("input/day03.txt")
-                .unwrap()
-                .parse::<InstructionSet>()
-                .unwrap()
-                .evaluate_with_state()
-                .into_iter()
-                .sum::<u32>()
-        )
-    }
+#[test]
+fn part2() {
+    assert_eq!(
+        82733683,
+        std::fs::read_to_string("input/day03.txt")
+            .unwrap()
+            .parse::<InstructionSet>()
+            .unwrap()
+            .evaluate_with_state()
+            .into_iter()
+            .sum::<u32>()
+    )
 }
