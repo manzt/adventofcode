@@ -1,9 +1,11 @@
-struct InstructionSet(Vec<Instruction>);
-
-enum Instruction {
-    Multiply(u32, u32),
-    StateChange(State),
-}
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{anychar, u32},
+    combinator::{iterator, map},
+    sequence::{preceded, terminated, tuple},
+    IResult, Parser,
+};
 
 #[derive(Clone, Copy, PartialEq)]
 enum State {
@@ -11,51 +13,57 @@ enum State {
     Disabled,
 }
 
-impl std::str::FromStr for InstructionSet {
-    type Err = std::convert::Infallible;
+struct InstructionSet(Vec<Instruction>);
 
+enum Instruction {
+    Multiply((u32, u32)),
+    StateChange(State),
+}
+
+impl std::str::FromStr for InstructionSet {
+    type Err = ();
     fn from_str(seq: &str) -> Result<Self, Self::Err> {
-        let mut cmds = vec![];
-        let mut seq: &str = seq;
-        while !seq.is_empty() {
-            if let Some(((a, b), rest)) = parse_multiply(seq) {
-                cmds.push(Instruction::Multiply(a, b));
-                seq = rest;
-            } else if let Some((s, rest)) = parse_state_change(seq) {
-                cmds.push(Instruction::StateChange(s));
-                seq = rest;
-            } else {
-                // invalid token, skip it
-                seq = &seq[1..];
-            }
-        }
-        Ok(InstructionSet(cmds))
+        Ok(Self(
+            iterator(seq, corrupted_instruction).flatten().collect(),
+        ))
     }
 }
 
 /// Try to parse a "mul(a, b)" token from the input sequence.
 ///
 /// e.g, "mul(2, 3)" -> (2, 3)
-fn parse_multiply(seq: &str) -> Option<((u32, u32), &str)> {
-    let input = seq.strip_prefix("mul(")?;
-    let (left, input) = input.split_once(",")?;
-    let a = left.parse().ok()?;
-    let (right, input) = input.split_once(")")?;
-    let b = right.parse().ok()?;
-    Some(((a, b), input))
+fn multiply(seq: &str) -> IResult<&str, (u32, u32)> {
+    tuple((
+        preceded(tag("mul("), u32),
+        terminated(preceded(tag(","), u32), tag(")")),
+    ))
+    .parse(seq)
 }
 
 /// Try to parse a "do()" or "don't()" token from the input sequence.
 ///
 /// e.g, "do()" -> State::Enabled
 /// e.g, "don't()" -> State::Disabled
-fn parse_state_change(seq: &str) -> Option<(State, &str)> {
-    seq.strip_prefix("do()")
-        .map(|rest| (State::Enabled, rest))
-        .or_else(|| {
-            seq.strip_prefix("don't()")
-                .map(|rest| (State::Disabled, rest))
-        })
+fn state_change(seq: &str) -> IResult<&str, State> {
+    alt((
+        map(tag("do()"), |_| State::Enabled),
+        map(tag("don't()"), |_| State::Disabled),
+    ))
+    .parse(seq)
+}
+
+/// Try to parse an instruction from the input sequence.
+fn instruction(seq: &str) -> IResult<&str, Instruction> {
+    alt((
+        map(multiply, Instruction::Multiply),
+        map(state_change, Instruction::StateChange),
+    ))
+    .parse(seq)
+}
+
+/// Try to parse a corrupted instruction from the input sequence.
+fn corrupted_instruction(seq: &str) -> IResult<&str, Option<Instruction>> {
+    alt((map(instruction, Some), map(anychar, |_| None))).parse(seq)
 }
 
 impl InstructionSet {
@@ -63,18 +71,17 @@ impl InstructionSet {
         self.0
             .iter()
             .map(|t| match t {
-                Instruction::Multiply(a, b) => a * b,
+                Instruction::Multiply((a, b)) => a * b,
                 _ => 0,
             })
             .collect()
     }
-
     fn evaluate_with_state(&self) -> Vec<u32> {
         let mut state = State::Enabled;
         let mut v = vec![];
         for token in &self.0 {
             match token {
-                Instruction::Multiply(a, b) if state == State::Enabled => {
+                Instruction::Multiply((a, b)) if state == State::Enabled => {
                     v.push(a * b);
                 }
                 Instruction::StateChange(s) => state = *s,
