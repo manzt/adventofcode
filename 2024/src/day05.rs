@@ -17,13 +17,6 @@ impl RuleSet {
     fn validate(&self, manual: &[u8]) -> Result<u8, u8> {
         let mut sorted = manual.to_vec();
         sorted.sort_by(|a, b| {
-            if self.rules.get(a).map_or(false, |inner| inner.contains(b)) {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        });
-        sorted.sort_by(|a, b| {
             self.rules
                 .get(a)
                 .and_then(|inner| inner.get(b))
